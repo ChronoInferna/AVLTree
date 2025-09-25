@@ -140,6 +140,7 @@ int AVLTree::balanceFactor(Node* node) {
     return leftHeight - rightHeight;
 }
 
+// TODO generally for all in main: print unsuccessful or successful as needed
 Node* AVLTree::insert(Node* node, Student student) {
     if (!node) return new Node(student);
 
@@ -148,9 +149,11 @@ Node* AVLTree::insert(Node* node, Student student) {
     else
         node->right = insert(node->right, student);
 
+    // Update height
     node->height = 1 + std::max(node->left ? node->left->height : 0,
                                 node->right ? node->right->height : 0);
 
+    // Balance tree
     int balance = balanceFactor(node);
 
     if (balance < -1) {
@@ -174,25 +177,135 @@ bool AVLTree::insert(std::string name, std::string id) {
     try {
         newStudent = Student(name, id);
     } catch (const std::invalid_argument& e) {
-        std::cout << "unsuccessful" << std::endl;
         return false;
     }
 
-    // Unique IDs TODO
-    // if (search(id)) {
-    //     std::cout << "unsuccessful" << std::endl;
-    //     return false;
-    // }
+    // Unique IDs
+    if (inTree(std::stoi(id))) return false;
 
     root = insert(root, newStudent);
 
-    std::cout << "successful" << std::endl;
     return true;
 }
-bool AVLTree::remove(int id) { throw std::runtime_error("Not implemented"); }
-bool AVLTree::search(int id) { throw std::runtime_error("Not implemented"); }
+Node* AVLTree::remove(Node* node, int id) {
+    if (!node) return node;
+
+    if (id < std::stoi(node->val.id))
+        node->left = remove(node->left, id);
+    else if (id > std::stoi(node->val.id))
+        node->right = remove(node->right, id);
+    else {
+        // Node with only one child or no child
+        if (!node->left || !node->right) {
+            Node* temp = node->left ? node->left : node->right;
+
+            // No child case
+            if (!temp) {
+                temp = node;
+                node = nullptr;
+                delete temp;
+                return node;
+            }
+
+            // One child case
+            node->val = temp->val;
+            Node* tempLeft = temp->left;
+            Node* tempRight = temp->right;
+
+            node->left = tempLeft;
+            node->right = tempRight;
+
+            temp->left = nullptr;
+            temp->right = nullptr;
+            delete temp;
+        } else {
+            // 2 child case
+            Node* temp = node->right;
+
+            while (temp->left) temp = temp->left;
+
+            node->val = temp->val;
+            node->right = remove(node->right, std::stoi(temp->val.id));
+        }
+    }
+
+    // Update height
+    node->height = 1 + std::max(node->left ? node->left->height : 0,
+                                node->right ? node->right->height : 0);
+
+    // Balance tree
+    int balance = balanceFactor(node);
+
+    if (balance < -1) {
+        int rightBalance = balanceFactor(node->right);
+        if (rightBalance > 0)
+            node = rotateRightLeft(node);
+        else
+            node = rotateRightRight(node);
+    } else if (balance > 1) {
+        int leftBalance = balanceFactor(node->left);
+        if (leftBalance < 0)
+            node = rotateLeftRight(node);
+        else
+            node = rotateLeftLeft(node);
+    }
+
+    return node;
+}
+bool AVLTree::remove(int id) {
+    // Search for the id first
+    if (!inTree(id)) return false;
+
+    root = remove(root, id);
+
+    return true;
+}
+bool AVLTree::inTree(int id) {
+    Node* current = root;
+    while (current)
+        if (std::stoi(current->val.id) == id)
+            return true;
+        else if (id < std::stoi(current->val.id))
+            current = current->left;
+        else
+            current = current->right;
+    return false;
+}
+bool AVLTree::search(int id) {
+    Node* current = root;
+    while (current) {
+        if (std::stoi(current->val.id) == id) {
+            std::cout << current->val.name << std::endl;
+            return true;
+        } else if (id < std::stoi(current->val.id)) {
+            current = current->left;
+        } else {
+            current = current->right;
+        }
+    }
+    return false;
+}
 bool AVLTree::search(std::string name) {
-    throw std::runtime_error("Not implemented");
+    bool found = false;
+
+    // Lambda function for inorder DFS! Cool trick I learned
+    auto inorderDFS = [&](Node* node, const std::string& targetName,
+                          auto& inorderDFSRef) -> void {
+        if (!node) return;
+
+        inorderDFSRef(node->left, targetName, inorderDFSRef);
+
+        if (node->val.name == targetName) {
+            std::cout << node->val.id << std::endl;
+            found = true;
+        }
+
+        inorderDFSRef(node->right, targetName, inorderDFSRef);
+    };
+
+    inorderDFS(root, name, inorderDFS);
+
+    return found;
 }
 
 // Traversals
@@ -254,7 +367,15 @@ void AVLTree::printPostorder() {
     printVector(postorder);
 }
 
-void AVLTree::printLevelCount() { throw std::runtime_error("Not implemented"); }
+int AVLTree::getLevelCount() {
+    if (!root) return 0;
+    return root->height;
+}
+void AVLTree::printLevelCount() { std::cout << getLevelCount() << std::endl; }
 bool AVLTree::removeInorder(int n) {
-    throw std::runtime_error("Not implemented");
+    if (!root) return false;
+    std::vector<Student> inorder;
+    inorder = getInorder();
+    if (n >= int(inorder.size()) || n < 0) return false;
+    return remove(std::stoi(inorder[n].id));
 }

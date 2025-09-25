@@ -1,6 +1,7 @@
 #include <catch2/catch_all.hpp>
 #include <iomanip>
-#include <iostream>
+#include <random>
+#include <string>
 
 #define private public
 
@@ -143,12 +144,16 @@ TEST_CASE("Large insert and delete", "[tree behavior]") {
     AVLTree inputTree;
     std::vector<Student> expectedOutput, actualOutput;
 
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<int> dist(0, 99999999);
+
     for (int i = 0; i < 100; i++) {
         // Generate a random 8-digit number as a string
-        int randomNumber = rand() % 100000000;
+        int randomNumber = dist(gen);
         std::stringstream ss;
         ss << std::setw(8) << std::setfill('0') << randomNumber;
-        std::string randomInput = std::to_string(randomNumber);
+        std::string randomInput = ss.str();
 
         if (std::count(expectedOutput.begin(), expectedOutput.end(),
                        Student("Test Student", randomInput)) == 0) {
@@ -163,8 +168,10 @@ TEST_CASE("Large insert and delete", "[tree behavior]") {
     std::sort(expectedOutput.begin(), expectedOutput.end());
     REQUIRE(expectedOutput == actualOutput);
 
+    // Delete
+    dist = std::uniform_int_distribution<int>(0, expectedOutput.size() - 1);
     for (int i = 0; i < 10; i++) {
-        int randomInput = rand() % 100;
+        int randomInput = dist(gen);
         inputTree.remove(std::stoi(expectedOutput[randomInput].id));
         expectedOutput.erase(expectedOutput.begin() + randomInput);
     }
@@ -176,5 +183,93 @@ TEST_CASE("Large insert and delete", "[tree behavior]") {
     REQUIRE(expectedOutput == actualOutput);
 }
 
-// TODO You must write 5 unique, meaningful tests for credit on the testing
-// portion of this project!
+TEST_CASE("Duplicate ID", "[tree behavior]") {
+    AVLTree tree;
+
+    REQUIRE(tree.insert("Test Student", "12345678") == true);
+    REQUIRE(tree.insert("Another Student", "12345678") == false);
+    REQUIRE(tree.root != nullptr);
+    REQUIRE(tree.root->val.name == "Test Student");
+    REQUIRE(tree.root->val.id == "12345678");
+}
+
+TEST_CASE("Remove existing ID", "[tree behavior]") {
+    AVLTree tree;
+
+    REQUIRE(tree.insert("Test Student", "12345678") == true);
+    REQUIRE(tree.remove(12345678) == true);
+    REQUIRE(tree.root == nullptr);
+}
+
+TEST_CASE("Remove non-existent ID", "[tree behavior]") {
+    AVLTree tree;
+
+    REQUIRE(tree.insert("Test Student", "12345678") == true);
+    REQUIRE(tree.remove(87654321) == false);
+    REQUIRE(tree.root != nullptr);
+    REQUIRE(tree.root->val.name == "Test Student");
+    REQUIRE(tree.root->val.id == "12345678");
+}
+
+TEST_CASE("Remove from empty tree", "[tree behavior]") {
+    AVLTree tree;
+
+    REQUIRE(tree.remove(12345678) == false);
+    REQUIRE(tree.root == nullptr);
+}
+
+TEST_CASE("Search by name", "[tree behavior]") {
+    AVLTree tree;
+
+    REQUIRE(tree.insert("Test Student", "12345678") == true);
+    REQUIRE(tree.insert("Test Student", "87654321") == true);
+    REQUIRE(tree.search("Test Student") == true);
+    REQUIRE(tree.search("Non-existent Student") == false);
+}
+
+TEST_CASE("Get level count", "[tree behavior]") {
+    AVLTree tree;
+
+    REQUIRE(tree.getLevelCount() == 0);
+
+    tree.insert("A", "10000000");
+    REQUIRE(tree.getLevelCount() == 1);
+
+    tree.insert("B", "20000000");
+    REQUIRE(tree.getLevelCount() == 2);
+
+    tree.insert("C", "30000000");
+    REQUIRE(tree.getLevelCount() == 2);  // After balancing
+
+    tree.insert("D", "05000000");
+    REQUIRE(tree.getLevelCount() == 3);
+}
+
+TEST_CASE("removeInorder function", "[tree behavior]") {
+    AVLTree tree;
+
+    tree.insert("A", "10000000");
+    tree.insert("B", "20000000");
+    tree.insert("C", "30000000");
+    tree.insert("D", "40000000");
+    tree.insert("E", "50000000");
+
+    // Current inorder: A, B, C, D, E
+
+    REQUIRE(tree.removeInorder(2) == true);  // Remove C
+    vector<Student> result = tree.getInorder();
+    REQUIRE(result.size() == 4);
+    REQUIRE(result[0].id == "10000000");
+    REQUIRE(result[1].id == "20000000");
+    REQUIRE(result[2].id == "40000000");
+    REQUIRE(result[3].id == "50000000");
+
+    REQUIRE(tree.removeInorder(0) == true);  // Remove A
+    result = tree.getInorder();
+    REQUIRE(result.size() == 3);
+    REQUIRE(result[0].id == "20000000");
+    REQUIRE(result[1].id == "40000000");
+    REQUIRE(result[2].id == "50000000");
+
+    REQUIRE(tree.removeInorder(5) == false);  // Invalid position
+}

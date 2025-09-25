@@ -28,9 +28,13 @@ class AVLTree {
 
     // Recursive helper functions called by public functions
     Node* insert(Node* node, Student value);
+    Node* remove(Node* node, int id);
     void getInorder(Node* node, std::vector<Student>& inorder);
     void getPreorder(Node* node, std::vector<Student>& preorder);
     void getPostorder(Node* node, std::vector<Student>& postorder);
+
+    // Utility implementation of search function for use in insert and remove
+    bool inTree(int id);
 
     int balanceFactor(Node* node);
 
@@ -55,6 +59,7 @@ class AVLTree {
     void printInorder();
     void printPreorder();
     void printPostorder();
+    int getLevelCount();
     void printLevelCount();
     bool removeInorder(int n);
 };
