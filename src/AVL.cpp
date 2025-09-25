@@ -117,12 +117,12 @@ Node* AVLTree::rotateLeftLeft(Node*& node) {
     Node* grandchild = child->right;
     child->right = node;
     node->left = grandchild;
-    return child;
 
     node->height = 1 + std::max(node->left ? node->left->height : 0,
                                 node->right ? node->right->height : 0);
     child->height = 1 + std::max(child->left ? child->left->height : 0,
                                  child->right ? child->right->height : 0);
+    return child;
 }
 Node* AVLTree::rotateRightLeft(Node*& node) {
     node->right = rotateLeftLeft(node->right);
@@ -140,7 +140,6 @@ int AVLTree::balanceFactor(Node* node) {
     return leftHeight - rightHeight;
 }
 
-// TODO generally for all in main: print unsuccessful or successful as needed
 Node* AVLTree::insert(Node* node, Student student) {
     if (!node) return new Node(student);
 

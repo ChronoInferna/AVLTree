@@ -9,55 +9,7 @@
 
 using namespace std;
 
-TEST_CASE("Test traversals", "[tree behavior]") {
-    AVLTree tree;
-    tree.insert("Alice", "00000002");
-    tree.insert("Bob", "00000001");
-    tree.insert("Charlie", "00000003");
-
-    SECTION("Inorder traversal") {
-        vector<Student> result = tree.getInorder();
-        REQUIRE(result.size() == 3);
-        REQUIRE(result[0].name == "Bob");
-        REQUIRE(result[1].name == "Alice");
-        REQUIRE(result[2].name == "Charlie");
-    };
-
-    SECTION("Preorder traversal") {
-        vector<Student> result = tree.getPreorder();
-        REQUIRE(result.size() == 3);
-        REQUIRE(result[0].name == "Alice");
-        REQUIRE(result[1].name == "Bob");
-        REQUIRE(result[2].name == "Charlie");
-    };
-
-    SECTION("Postorder traversal") {
-        vector<Student> result = tree.getPostorder();
-        REQUIRE(result.size() == 3);
-        REQUIRE(result[0].name == "Bob");
-        REQUIRE(result[1].name == "Charlie");
-        REQUIRE(result[2].name == "Alice");
-    };
-}
-
-TEST_CASE("Test empty tree", "[tree behavior]") {
-    AVLTree tree;
-
-    SECTION("Check if the root is null") { REQUIRE(tree.root == nullptr); };
-
-    SECTION("Check if traversals return empty vectors") {
-        vector<Student> result = tree.getInorder();
-        REQUIRE(result.empty());
-
-        result = tree.getPreorder();
-        REQUIRE(result.empty());
-
-        result = tree.getPostorder();
-        REQUIRE(result.empty());
-    };
-}
-
-TEST_CASE("Catch incorrect insertions", "[input validation]") {
+TEST_CASE("Incorrect insertions", "[required]") {
     AVLTree tree;
 
     SECTION("Insert a student with a negative ID") {
@@ -81,26 +33,32 @@ TEST_CASE("Catch incorrect insertions", "[input validation]") {
     };
 }
 
-TEST_CASE("Simple insertions", "[tree behavior]") {
+TEST_CASE("Test empty tree", "[required]") {
     AVLTree tree;
 
-    REQUIRE(tree.insert("Test Student", "12345678") == true);
-    REQUIRE(tree.root != nullptr);
-    REQUIRE(tree.root->val.name == "Test Student");
-    REQUIRE(tree.root->val.id == "12345678");
+    SECTION("Check if the root is null") { REQUIRE(tree.root == nullptr); };
 
-    REQUIRE(tree.insert("Second Student", "87654321") == true);
-    REQUIRE(tree.root->right != nullptr);
-    REQUIRE(tree.root->right->val.name == "Second Student");
-    REQUIRE(tree.root->right->val.id == "87654321");
+    SECTION("Check if traversals return empty vectors") {
+        vector<Student> result = tree.getInorder();
+        REQUIRE(result.empty());
 
-    REQUIRE(tree.insert("Third Student", "00000001") == true);
-    REQUIRE(tree.root->left != nullptr);
-    REQUIRE(tree.root->left->val.name == "Third Student");
-    REQUIRE(tree.root->left->val.id == "00000001");
+        result = tree.getPreorder();
+        REQUIRE(result.empty());
+
+        result = tree.getPostorder();
+        REQUIRE(result.empty());
+    };
+
+    SECTION("Check if search returns false") {
+        REQUIRE(tree.search("Non-existent Student") == false);
+    };
+
+    SECTION("Check if remove returns false") {
+        REQUIRE(tree.remove(12345678) == false);
+    };
 }
 
-TEST_CASE("Correct rotations", "[tree behavior]") {
+TEST_CASE("Correct rotations", "[required]") {
     AVLTree tree;
 
     SECTION("Right-Right case") {
@@ -140,7 +98,50 @@ TEST_CASE("Correct rotations", "[tree behavior]") {
     };
 }
 
-TEST_CASE("Large insert and delete", "[tree behavior]") {
+TEST_CASE("Deletion cases", "[required]") {
+    AVLTree tree;
+
+    SECTION("Delete leaf node") {
+        tree.insert("A", "20000000");
+        tree.insert("B", "10000000");
+        tree.insert("C", "30000000");
+        REQUIRE(tree.remove(10000000) == true);
+        vector<Student> result = tree.getInorder();
+        REQUIRE(result.size() == 2);
+        REQUIRE(result[0].id == "20000000");
+        REQUIRE(result[1].id == "30000000");
+    };
+
+    SECTION("Delete node with one child") {
+        tree.insert("A", "20000000");
+        tree.insert("B", "10000000");
+        tree.insert("C", "30000000");
+        tree.insert("D", "25000000");
+        REQUIRE(tree.remove(30000000) == true);
+        vector<Student> result = tree.getInorder();
+        REQUIRE(result.size() == 3);
+        REQUIRE(result[0].id == "10000000");
+        REQUIRE(result[1].id == "20000000");
+        REQUIRE(result[2].id == "25000000");
+    };
+
+    SECTION("Delete node with two children") {
+        tree.insert("A", "20000000");
+        tree.insert("B", "10000000");
+        tree.insert("C", "30000000");
+        tree.insert("D", "25000000");
+        tree.insert("E", "35000000");
+        REQUIRE(tree.remove(20000000) == true);
+        vector<Student> result = tree.getInorder();
+        REQUIRE(result.size() == 4);
+        REQUIRE(result[0].id == "10000000");
+        REQUIRE(result[1].id == "25000000");
+        REQUIRE(result[2].id == "30000000");
+        REQUIRE(result[3].id == "35000000");
+    };
+}
+
+TEST_CASE("Large insert and delete", "[required]") {
     AVLTree inputTree;
     std::vector<Student> expectedOutput, actualOutput;
 
@@ -169,8 +170,8 @@ TEST_CASE("Large insert and delete", "[tree behavior]") {
     REQUIRE(expectedOutput == actualOutput);
 
     // Delete
-    dist = std::uniform_int_distribution<int>(0, expectedOutput.size() - 1);
     for (int i = 0; i < 10; i++) {
+        dist = std::uniform_int_distribution<int>(0, expectedOutput.size() - 1);
         int randomInput = dist(gen);
         inputTree.remove(std::stoi(expectedOutput[randomInput].id));
         expectedOutput.erase(expectedOutput.begin() + randomInput);
@@ -183,7 +184,57 @@ TEST_CASE("Large insert and delete", "[tree behavior]") {
     REQUIRE(expectedOutput == actualOutput);
 }
 
-TEST_CASE("Duplicate ID", "[tree behavior]") {
+TEST_CASE("Test traversals", "[optional]") {
+    AVLTree tree;
+    tree.insert("Alice", "00000002");
+    tree.insert("Bob", "00000001");
+    tree.insert("Charlie", "00000003");
+
+    SECTION("Inorder traversal") {
+        vector<Student> result = tree.getInorder();
+        REQUIRE(result.size() == 3);
+        REQUIRE(result[0].name == "Bob");
+        REQUIRE(result[1].name == "Alice");
+        REQUIRE(result[2].name == "Charlie");
+    };
+
+    SECTION("Preorder traversal") {
+        vector<Student> result = tree.getPreorder();
+        REQUIRE(result.size() == 3);
+        REQUIRE(result[0].name == "Alice");
+        REQUIRE(result[1].name == "Bob");
+        REQUIRE(result[2].name == "Charlie");
+    };
+
+    SECTION("Postorder traversal") {
+        vector<Student> result = tree.getPostorder();
+        REQUIRE(result.size() == 3);
+        REQUIRE(result[0].name == "Bob");
+        REQUIRE(result[1].name == "Charlie");
+        REQUIRE(result[2].name == "Alice");
+    };
+}
+
+TEST_CASE("Simple insertions", "[optional]") {
+    AVLTree tree;
+
+    REQUIRE(tree.insert("Test Student", "12345678") == true);
+    REQUIRE(tree.root != nullptr);
+    REQUIRE(tree.root->val.name == "Test Student");
+    REQUIRE(tree.root->val.id == "12345678");
+
+    REQUIRE(tree.insert("Second Student", "87654321") == true);
+    REQUIRE(tree.root->right != nullptr);
+    REQUIRE(tree.root->right->val.name == "Second Student");
+    REQUIRE(tree.root->right->val.id == "87654321");
+
+    REQUIRE(tree.insert("Third Student", "00000001") == true);
+    REQUIRE(tree.root->left != nullptr);
+    REQUIRE(tree.root->left->val.name == "Third Student");
+    REQUIRE(tree.root->left->val.id == "00000001");
+}
+
+TEST_CASE("Duplicate ID", "[optional]") {
     AVLTree tree;
 
     REQUIRE(tree.insert("Test Student", "12345678") == true);
@@ -193,7 +244,7 @@ TEST_CASE("Duplicate ID", "[tree behavior]") {
     REQUIRE(tree.root->val.id == "12345678");
 }
 
-TEST_CASE("Remove existing ID", "[tree behavior]") {
+TEST_CASE("Remove existing ID", "[optional]") {
     AVLTree tree;
 
     REQUIRE(tree.insert("Test Student", "12345678") == true);
@@ -201,7 +252,7 @@ TEST_CASE("Remove existing ID", "[tree behavior]") {
     REQUIRE(tree.root == nullptr);
 }
 
-TEST_CASE("Remove non-existent ID", "[tree behavior]") {
+TEST_CASE("Remove non-existent ID", "[optional]") {
     AVLTree tree;
 
     REQUIRE(tree.insert("Test Student", "12345678") == true);
@@ -211,14 +262,14 @@ TEST_CASE("Remove non-existent ID", "[tree behavior]") {
     REQUIRE(tree.root->val.id == "12345678");
 }
 
-TEST_CASE("Remove from empty tree", "[tree behavior]") {
+TEST_CASE("Remove from empty tree", "[optional]") {
     AVLTree tree;
 
     REQUIRE(tree.remove(12345678) == false);
     REQUIRE(tree.root == nullptr);
 }
 
-TEST_CASE("Search by name", "[tree behavior]") {
+TEST_CASE("Search by name", "[optional]") {
     AVLTree tree;
 
     REQUIRE(tree.insert("Test Student", "12345678") == true);
@@ -227,7 +278,7 @@ TEST_CASE("Search by name", "[tree behavior]") {
     REQUIRE(tree.search("Non-existent Student") == false);
 }
 
-TEST_CASE("Get level count", "[tree behavior]") {
+TEST_CASE("Get level count", "[optional]") {
     AVLTree tree;
 
     REQUIRE(tree.getLevelCount() == 0);
@@ -245,7 +296,7 @@ TEST_CASE("Get level count", "[tree behavior]") {
     REQUIRE(tree.getLevelCount() == 3);
 }
 
-TEST_CASE("removeInorder function", "[tree behavior]") {
+TEST_CASE("removeInorder function", "[optional]") {
     AVLTree tree;
 
     tree.insert("A", "10000000");
@@ -272,4 +323,25 @@ TEST_CASE("removeInorder function", "[tree behavior]") {
     REQUIRE(result[2].id == "50000000");
 
     REQUIRE(tree.removeInorder(5) == false);  // Invalid position
+}
+
+TEST_CASE("Correct level count after multiple operations", "[optional]") {
+    AVLTree tree;
+
+    tree.insert("A", "10000000");
+    tree.insert("B", "20000000");
+    tree.insert("C", "30000000");
+    REQUIRE(tree.getLevelCount() == 2);  // After balancing
+
+    tree.remove(20000000);
+    REQUIRE(tree.getLevelCount() == 2);
+
+    tree.insert("D", "05000000");
+    REQUIRE(tree.getLevelCount() == 2);
+
+    tree.insert("E", "02500000");
+    REQUIRE(tree.getLevelCount() == 3);
+
+    tree.remove(10000000);
+    REQUIRE(tree.getLevelCount() == 2);
 }

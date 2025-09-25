@@ -44,12 +44,12 @@ int main() {
         } else if (command == "search") {
             std::string query = line.substr(line.find(' ') + 1);
             std::string name;
-            try {
+            if (line.find('"') == std::string::npos)
+                name = "";
+            else
                 name = line.substr(line.find('"') + 1,
                                    line.find_last_of('"') - line.find('"') - 1);
-            } catch (std::invalid_argument&) {
-                name = "";
-            }
+
             if (name != "") {
                 if (!tree.search(name))
                     std::cout << "unsuccessful" << std::endl;
